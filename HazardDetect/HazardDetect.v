@@ -6,11 +6,11 @@ module HazardDetect(
     output reg IFIDwrite, //IF/ID書き込み許可信号
     output reg stall //ストール信号
 );
-wire [1:0] op=I[15:14];
-wire [2:0] reg1=I[13:11];
-wire [2:0] reg2=I[10:8];
-wire [3:0] op3=I[7:4];
-always @(*) begin
+    wire [1:0] op=I[15:14]; //命令の分類
+    wire [2:0] reg1=I[13:11]; //レジスタ指定フィールド
+    wire [2:0] reg2=I[10:8]; //レジスタ指定フィールド
+    wire [3:0] op3=I[7:4]; //演算種別
+    always @(*) begin // デフォルトではストールしない
     PCwrite=1'b1;
     IFIDwrite=1'b1;
     stall=1'b0;
@@ -23,7 +23,8 @@ always @(*) begin
             (op==2'b01) //SW
             ) begin //reg1,reg2両方使う命令
         if(memtoreg) begin
-            if(Rt==reg1||Rt==reg2) begin
+            if(Rt==reg1||Rt==reg2) begin // PCとIF/IDレジスタを保持し、ID/EX段へバブルを挿入する
+
                 PCwrite=1'b0;
                 IFIDwrite=1'b0;
                 stall=1'b1;
@@ -49,7 +50,7 @@ always @(*) begin
             (op==2'b00) //LW
             ) begin //reg2のみ使う命令
         if(memtoreg) begin
-            if(Rt==reg2) begin
+            if(Rt==reg2) begin //Load-Useハザード検出
                 PCwrite=1'b0;
                 IFIDwrite=1'b0;
                 stall=1'b1;
